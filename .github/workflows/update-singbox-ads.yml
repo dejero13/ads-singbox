@@ -1,9 +1,9 @@
-name: Обновить geosite-category-ads-all.srs из sing-box.zip
+name: Обновить ads-singbox (всегда один релиз)
 
 on:
   schedule:
-    - cron: '0 3 * * *'        # каждый день в 3:00 UTC (можно изменить)
-  workflow_dispatch:           # можно запускать вручную
+    - cron: '0 4 * * *'        # каждый день в 4:00 UTC
+  workflow_dispatch:
 
 jobs:
   update:
@@ -17,16 +17,15 @@ jobs:
         uses: robinraju/release-downloader@v1
         with:
           repository: runetfreedom/russia-v2ray-rules-dat
-          tag: latest
+          latest: true              
           fileName: sing-box.zip
           extract: false
 
-      - name: Распаковать и извлечь нужный файл
+      - name: Распаковать и извлечь geosite-category-ads-all.srs
         run: |
-          mkdir -p temp
-          unzip -o sing-box.zip -d temp
-          mv temp/geosite-category-ads-all.srs ./geosite-category-ads-all.srs
-          rm -rf temp sing-box.zip
+          unzip -o sing-box.zip
+          mv geosite-category-ads-all.srs ./geosite-category-ads-all.srs || echo "Файл не найден в архиве"
+          rm -f sing-box.zip
 
       - name: Коммит и пуш изменений
         run: |
@@ -34,9 +33,24 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           if git diff --quiet; then
-            echo "Файл не изменился"
+            echo "Файл не изменился — пропускаем"
           else
             git add geosite-category-ads-all.srs
             git commit -m "Обновлён geosite-category-ads-all.srs из Latest релиза"
             git push
           fi
+
+      - name: Удалить старый релиз "latest" (если есть)
+        continue-on-error: true
+        run: |
+          gh release delete latest --yes || echo "Релиз latest ещё не существует"
+
+      - name: Создать новый релиз "latest"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create latest \
+            --title "Latest Release" \
+            --notes "Автоматическое обновление geosite-category-ads-all.srs из https://github.com/runetfreedom/russia-v2ray-rules-dat" \
+            --latest \
+            geosite-category-ads-all.srs
