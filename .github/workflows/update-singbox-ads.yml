@@ -1,0 +1,42 @@
+name: Обновить geosite-category-ads-all.srs из sing-box.zip
+
+on:
+  schedule:
+    - cron: '0 3 * * *'        # каждый день в 3:00 UTC (можно изменить)
+  workflow_dispatch:           # можно запускать вручную
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout репозиторий
+        uses: actions/checkout@v4
+
+      - name: Скачать sing-box.zip из Latest релиза
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: runetfreedom/russia-v2ray-rules-dat
+          tag: latest
+          fileName: sing-box.zip
+          extract: false
+
+      - name: Распаковать и извлечь нужный файл
+        run: |
+          mkdir -p temp
+          unzip -o sing-box.zip -d temp
+          mv temp/geosite-category-ads-all.srs ./geosite-category-ads-all.srs
+          rm -rf temp sing-box.zip
+
+      - name: Коммит и пуш изменений
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          if git diff --quiet; then
+            echo "Файл не изменился"
+          else
+            git add geosite-category-ads-all.srs
+            git commit -m "Обновлён geosite-category-ads-all.srs из Latest релиза"
+            git push
+          fi
