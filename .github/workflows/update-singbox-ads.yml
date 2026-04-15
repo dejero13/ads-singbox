@@ -5,6 +5,11 @@ on:
     - cron: '0 4 * * *'
   workflow_dispatch:
 
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←
+permissions:
+  contents: write
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -21,7 +26,7 @@ jobs:
           fileName: sing-box.zip
           extract: false
 
-      - name: Распаковать и извлечь geosite-category-ads-all.srs
+      - name: Распаковать и извлечь файл
         run: |
           unzip -o sing-box.zip
           mv rule-set-geosite/geosite-category-ads-all.srs ./geosite-category-ads-all.srs || echo "Файл не найден"
@@ -40,10 +45,9 @@ jobs:
             git push
           fi
 
-      - name: Удалить старый релиз "latest" (если есть)
+      - name: Удалить старый релиз "latest"
         continue-on-error: true
-        run: |
-          gh release delete latest --yes || echo "Релиз latest ещё не существует"
+        run: gh release delete latest --yes || echo "Релиз не найден"
 
       - name: Создать новый релиз "latest"
         env:
