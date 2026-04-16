@@ -16,7 +16,7 @@ jobs:
       - name: Checkout репозиторий
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # важно для работы с тегами
+          fetch-depth: 0
 
       - name: Скачать sing-box.zip из Latest релиза
         uses: robinraju/release-downloader@v1
@@ -32,6 +32,36 @@ jobs:
           mv rule-set-geosite/geosite-category-ads-all.srs ./geosite-category-ads-all.srs || echo "Файл не найден"
           rm -rf rule-set-geosite rule-set-geoip sing-box.zip
 
+      - name: Обновить README.md с датой
+        run: |
+          DATE=$(date +"%d.%m.%Y %H:%M UTC")
+          cat > README.md << EOF
+          # Обновляемый geosite-category-ads-all.srs для sing-box
+
+          **Последнее обновление:** ${DATE}
+
+          Файл автоматически обновляется каждый день из источника [runetfreedom/russia-v2ray-rules-dat](https://github.com/runetfreedom/russia-v2ray-rules-dat).
+
+          ### Прямая ссылка для скачивания:
+          [geosite-category-ads-all.srs](https://github.com/dejero13/ads-singbox/releases/download/latest/geosite-category-ads-all.srs)
+
+          ### Как использовать в sing-box:
+          \`\`\`json
+          {
+            "route": {
+              "rule_set": [
+                {
+                  "type": "local",
+                  "tag": "ads",
+                  "format": "binary",
+                  "path": "./geosite-category-ads-all.srs"
+                }
+              ]
+            }
+          }
+          \`\`\`
+          EOF
+
       - name: Коммит и пуш изменений
         run: |
           git config user.name "github-actions[bot]"
@@ -40,18 +70,20 @@ jobs:
           if git diff --quiet; then
             echo "Файл не изменился — пропускаем"
           else
-            git add geosite-category-ads-all.srs
-            git commit -m "Обновлён geosite-category-ads-all.srs из Latest релиза"
+            git add geosite-category-ads-all.srs README.md
+            git commit -m "Обновлён geosite-category-ads-all.srs (${DATE})"
             git push
           fi
 
-      - name: Полностью удалить старый релиз и тег "latest"
+      - name: Полностью очистить старый релиз и тег "latest"
         continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Удаляем релиз и тег latest..."
           gh release delete latest --cleanup-tag --yes || echo "Релиз не найден"
-          git tag -d latest || true
-          git push origin --delete refs/tags/latest || true
+          git tag -d latest 2>/dev/null || true
+          git push origin --delete refs/tags/latest 2>/dev/null || true
+          sleep 3
 
       - name: Создать новый релиз "latest"
         env:
@@ -59,6 +91,6 @@ jobs:
         run: |
           gh release create latest \
             --title "Latest Release" \
-            --notes "Автоматическое обновление geosite-category-ads-all.srs из https://github.com/runetfreedom/russia-v2ray-rules-dat" \
+            --notes "Обновление от $(date +"%d.%m.%Y %H:%M UTC")" \
             --latest \
             geosite-category-ads-all.srs
