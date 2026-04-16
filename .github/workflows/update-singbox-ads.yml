@@ -5,10 +5,8 @@ on:
     - cron: '0 4 * * *'
   workflow_dispatch:
 
-# ←←←←←←←←←←←←←←←←←←←←←←←←←←
 permissions:
   contents: write
-# ←←←←←←←←←←←←←←←←←←←←←←←←←←
 
 jobs:
   update:
@@ -17,6 +15,8 @@ jobs:
     steps:
       - name: Checkout репозиторий
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # важно для работы с тегами
 
       - name: Скачать sing-box.zip из Latest релиза
         uses: robinraju/release-downloader@v1
@@ -45,9 +45,13 @@ jobs:
             git push
           fi
 
-      - name: Удалить старый релиз "latest"
+      - name: Полностью удалить старый релиз и тег "latest"
         continue-on-error: true
-        run: gh release delete latest --yes || echo "Релиз не найден"
+        run: |
+          echo "Удаляем релиз и тег latest..."
+          gh release delete latest --cleanup-tag --yes || echo "Релиз не найден"
+          git tag -d latest || true
+          git push origin --delete refs/tags/latest || true
 
       - name: Создать новый релиз "latest"
         env:
@@ -55,6 +59,6 @@ jobs:
         run: |
           gh release create latest \
             --title "Latest Release" \
-            --notes "Автоматическое обновление geosite-category-ads-all.srs" \
+            --notes "Автоматическое обновление geosite-category-ads-all.srs из https://github.com/runetfreedom/russia-v2ray-rules-dat" \
             --latest \
             geosite-category-ads-all.srs
