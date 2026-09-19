@@ -1,6 +1,6 @@
 # Обновляемый geosite-category-ads-all.srs для sing-box
 
-**Последнее обновление:** 18.09.2026 08:54 UTC
+**Последнее обновление:** 19.09.2026 08:41 UTC
 
 Файл автоматически обновляется каждый день из источника [runetfreedom/russia-v2ray-rules-dat](https://github.com/runetfreedom/russia-v2ray-rules-dat).
 
